@@ -1,4 +1,3 @@
-
 # coding: utf-8
 
 # In[1]:
@@ -231,231 +230,108 @@ voc_bg=len(trigram_bg)
 #print voc_g,voc_b ,voc_bg  
 
 
-# In[23]:
-
-# unigram model
-norm_g1=np.sum(train_g_u.values())
-train_gp1={}
-for key in train_g_u.keys():
-    prob  = train_g_u[key]/np.float(norm_g1)
-    train_gp1[key]=prob
-
-norm_b1=np.sum(train_b_u.values())
-train_bp1={}
-for key in train_b_u.keys():
-    prob  = train_b_u[key]/np.float(norm_b1)
-    train_bp1[key]=prob
-    
-norm_bg1=np.sum(train_bg_u.values())
-train_bgp1={}
-for key in train_bg_u.keys():
-    prob  = train_bg_u[key]/np.float(norm_bg1)
-    train_bgp1[key]=prob
-
-
-# In[26]:
-
-# bigram model
- 
-k=0.01
-    
-norm_g2=len(train_g_u.values())
-train_gp2={}
-ntrain_gp2={}
-for key in bigram_g.keys():
-    prob  =(bigram_g[key]+k)/(train_g_u[key[0]]+k*norm_g2)
-    train_gp2[key]=prob
-for key in train_g_u.keys():
-    prob  = k/(train_g_u[key]+k*norm_g2)
-    ntrain_gp2[key]=prob
 
 
 
-    
-norm_b2=len(train_b_u.values())
-train_bp2={}
-ntrain_bp2={}
-for key in bigram_b.keys():
-    prob  =(bigram_b[key]+k)/(train_b_u[key[0]]+k*norm_b2)
-    train_bp2[key]=prob
-for key in train_b_u.keys():
-    prob  = k/(train_b_u[key]+k*norm_b2)
-    ntrain_bp2[key]=prob
-
-    
-norm_bg2=len(train_bg_u.values())
-train_bgp2={}
-ntrain_bgp2={}
-for key in bigram_bg.keys():
-    prob  =(bigram_bg[key]+k)/(train_bg_u[key[0]]+k*norm_bg2)
-    train_bgp2[key]=prob
-for key in train_bg_u.keys():
-    prob  = k/(train_bg_u[key]+k*norm_bg2)
-    ntrain_bgp2[key]=prob
 
 # In[]
-# trigram model
-k=0.01
-norm_g3=np.square(norm_g2)
 
-train_gp3={}
-ntrain_gp3={}
-for key in trigram_g.keys():
-    prob  = (trigram_g[key]+k)/(bigram_g[key[0:2]]+(k*norm_g3))
-    train_gp3[key]=prob
-for key in bigram_g.keys():
-    prob  = k/(bigram_g[key]+(k*norm_g3))
-    ntrain_gp3[key]=prob
+#specify corpus
+unigram_d=train_bg_u
+bigram_d =bigram_bg
 
+ # unigram continuation probability
+ 
+pc_n= {}
+pc_d = {}
+pc = {}
 
-norm_b3=np.square(norm_b2)
-train_bp3={}
-ntrain_bp3={}
-for key in trigram_b.keys():
-    prob  = (trigram_b[key]+k)/(bigram_b[key[0:2]]+(k*norm_b3))
-    train_bp3[key]=prob
-for key in bigram_b.keys():
-    prob  = k/(bigram_b[key]+(k*norm_b3))
-    ntrain_bp3[key]=prob  
+for key2 in bigram_d.keys():
+    if key2[1] in pc_n.keys():
+        pc_n[key2[1]] =pc_n[key2[1]] + 1
+        pc_d[key2[1]] =pc_d[key2[1]] + unigram_d[key2[0]]
+    else:
+        pc_n[key2[1]] = 1
+        pc_d[key2[1]] = unigram_d[key2[0]]
+
+for key in pc_n.keys():
+    pc[key] =   pc_n[key]/np.float(pc_d[key])
     
-norm_bg3=np.square(norm_bg2)
-train_bgp3={}
-ntrain_bgp3={}
-for key in trigram_bg.keys():
-    prob  = (trigram_bg[key]+k)/(bigram_bg[key[0:2]]+(k*norm_bg3))
-    train_bgp3[key]=prob
-for key in bigram_bg.keys():
-    prob  = k/(bigram_bg[key]+(k*norm_bg3))
-    ntrain_bgp3[key]=prob 
-    
-    
-# In[33]:
-
-def ucp(bigram_d,unigram_d):
-
-
-    # unigram continuation probability
-    pc_n= {}
-    pc_d = {}
-    pc = {}
-
-    for key2 in bigram_d.keys():
-        if key2[1] in pc_n.keys():
-            pc_n[key2[1]] =pc_n[key2[1]] + 1
-            pc_d[key2[1]] =pc_d[key2[1]] + unigram_d[key2[0]]
-        else:
-            pc_n[key2[1]] = 1
-            pc_d[key2[1]] = unigram_d[key2[0]]
-
-    for key in pc_n.keys():
-        pc[key] =   pc_n[key]/np.float(pc_d[key])
-        
-    return pc
-
-def ulamda(bigram_d,unigram_d):
-    # unigram lamda
-    d = 0.75
-    l_n= {}
-    for key2 in bigram_d.keys():
-        if key2[0] in l_n:
-            l_n[key2[0]] = l_n[key2[0]] + 1
-        else:
-            l_n[key2[0]] =  1
-
-    l={}
-    for key in l_n.keys():
-        l[key] = d*l_n[key]/unigram_d[key]
-    
-    return l
 
 
 
-def pcal(bigram_d,unigram_d,l,pc):
-    # probability calculation
-    d = 0.75
-    pkn= {}
-    for key2 in bigram_d.keys():
-        pkn[key2] = ((bigram_d[key2] -d)/unigram_d[key2[0]]) + l[key2[0]]*pc[key2[1]]
-    return pkn
+# unigram lamda
+d = 0.75
+l_n= {}
+for key2 in bigram_d.keys():
+    if key2[0] in l_n:
+        l_n[key2[0]] = l_n[key2[0]] + 1
+    else:
+        l_n[key2[0]] =  1
 
-def perp(test_d,bigram_d,unigram_d):
-   #  perplexity 
+l={}
+for key in l_n.keys():
+    l[key] = d*l_n[key]/unigram_d[key]
+
+# probability calculation
+d = 0.75
+pkn= {}
+for key2 in bigram_d.keys():
+    pkn[key2] = ((bigram_d[key2] -d)/unigram_d[key2[0]]) + l[key2[0]]*pc[key2[1]]
+ 
+# In[]
+
+  #  perplexity 
   
-    pc=ucp(bigram_d,unigram_d)
-    l=ulamda(bigram_d,unigram_d)
-    pkn=pcal(bigram_d,unigram_d,l,pc)
-    p_log = 0;
-    n = 0;
-    #d=0.75
-    for sents in test_d:
-        length = len(sents)
-        for i in range(0,length-1):
-            n+=1
-            key = (sents[i],sents[i+1])
-            if key in bigram_d.keys():
-                
-                p_log += np.log(pkn[key])
-            else:
-                prob = l[key[0]]*pc[key[1]]
-                p_log += np.log(prob)
-    #print p_log
 
-    ppx=np.exp(-p_log/n)
-    return ppx
+#p_log = 0;
+#n = 0;
+#for sents in test_bn:
+    #length = len(sents)
+    #for i in range(0,length-1):
+       # n+=1
+       # key = (sents[i],sents[i+1])
+       # if key in bigram_d.keys():
+            
+            #p_log += np.log(pkn[key])
+       # else:
+            #prob = l[key[0]]*pc[key[1]]
+           # p_log += np.log(prob)
 
-
-
-# In[36]:
-
-peplx_b=perp(test_bn[0:10],bigram_b,train_b_u)
-peplx_g=perp(test_gn[0:10],bigram_g,train_g_u)
-peplx_b_com=perp(test_bn[0:10],bigram_bg,train_bg_u)
-peplx_g_com=perp(test_gn[0:10],bigram_bg,train_bg_u)
-
-
-# In[37]:
-
-print "perplexity_kn_brown",peplx_b
-print "perplexity_kn_gutten",peplx_g
-print "perplexity_kn_b+g_brown",peplx_b_com
-print "perplexity_kn_b+g_gutten",peplx_g_com
-
-
-
-
+#ppx=np.exp(-p_log/n)
+#print ppx
 
 
 # In[ ]:# generating trigram sentence
 
-# in one keyword it will take bigram probability
-start_ws = ["he"]
-#ws = input("give a key word:--")
-#start_ws=[ws]
-key_bi =[]
-val_bi =[]
-bigram_d=bigram_b
-unigram_d=train_b_u
-l=ulamda(bigram_d,unigram_d)
-pc=ucp(bigram_d,unigram_d)
-bn=pcal(bigram_d,unigram_d,l,pc)
+
+
 #give corpus to generate sentence
-bigram_data=bn
+bigram_data=pkn
 ######################
 
-
+start_ws = ["he"]
+key_bi =[]
+val_bi =[]
 gen_sent = []
 gen_sent.append(start_ws[0])
 
 
 #######
-keys_temp =list( bigram_data.keys())
+keys_temp1 =list( bigram_data.keys())
+keys_temp=[]
+
+for key in keys_temp1:
+    if not ((key[0]=='UNK') | (key[1]=='UNK') ):
+        keys_temp.append(key)
+
 val_temp = []
 for key in keys_temp:
     val_temp.append(bigram_data[key])
 
 
 print("bigram Generated sentence is:")
-num_token =40
+num_token =50
 count_token = 0
 while(True):
     key_sel = []
@@ -491,5 +367,4 @@ print(' '.join(filtered_sent))
 
 
 
-# In[]
 
